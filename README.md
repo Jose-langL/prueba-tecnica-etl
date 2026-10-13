@@ -111,8 +111,48 @@ Marca lo que lograste y deja una nota si quedó parcial.
 
 ## Cómo ejecutar mi solución
 
-> Candidato: reemplaza este texto con los pasos exactos para reproducir tu
-> trabajo (comandos, orden y qué resultado esperar).
+Desde la raíz del repositorio, prepara el entorno de Python y la configuración:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env             # Windows: copy .env.example .env
+```
+
+En `.env`, configura las credenciales de PostgreSQL. Para usar el contenedor de
+este proyecto, `POSTGRES_HOST` debe ser `localhost` y `POSTGRES_PORT` debe ser
+`5434` (Docker publica el puerto local 5434 en el puerto 5432 del contenedor).
+El usuario, la contraseña y la base de datos deben coincidir con los valores de
+`docker-compose.yml` o con los valores que hayas configurado en `.env`.
+
+Inicia PostgreSQL y espera a que esté listo:
+
+```bash
+docker compose up -d postgres
+docker compose ps
+```
+
+El DDL de `sql/01_ddl_electoral.sql` crea las tablas automáticamente al iniciar
+por primera vez el contenedor con un volumen vacío. Después, desde la raíz y
+con el entorno virtual activo, ejecuta los archivos diarios en orden:
+
+```bash
+python3 main.py load-empadronados --fecha 2026-03-02
+python3 main.py load-empadronados --fecha 2026-03-03
+python3 main.py load-empadronados --fecha 2026-03-04
+```
+
+La fecha usa el formato `AAAA-MM-DD`; el programa la convierte para encontrar
+`data/empadronados/empadronados_AAAAMMDD.csv`. Por ejemplo, `2026-03-02` lee
+`data/empadronados/empadronados_20260302.csv`. Al terminar, el comando informa
+las métricas del pipeline en el log.
+
+**Estado actual:** en el código base, `src/loaders/postgres_loader.py` todavía
+no implementa `IncrementalLoader.load()`. Por eso el comando puede leer,
+transformar y validar el CSV, pero termina con `NotImplementedError` antes de
+guardar los registros en PostgreSQL. La implementación de ese loader es
+necesaria para completar la carga.
 
 ## Instalar y configurar Docker
 
