@@ -6,6 +6,7 @@ descarta, se cuenta y se deja un log con el motivo.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Callable, Iterable
 
 
@@ -37,12 +38,28 @@ class Validator:
         return result
 
 
-# ---------------------------------------------------------------------------
-# Reglas mínimas esperadas para el padrón (implementar, una función por regla
-# que reciba un registro y devuelva True si es válido):
-#   1. id_empadronado no vacío
-#   2. estado_registro dentro de: activo, suspendido, fallecido
-#   3. fecha_inscripcion con formato YYYY-MM-DD (ya transformada)
-# Luego arma la lista [("nombre_de_la_regla", funcion), ...] y pásala a
-# Validator(...) en el pipeline.
-# ---------------------------------------------------------------------------
+def has_id(record: dict) -> bool:
+    value = record.get("id_empadronado")
+    return isinstance(value, str) and bool(value.strip())
+
+
+def valid_sexo(record: dict) -> bool:
+    return record.get("sexo") in (None, "M", "F")
+
+
+def valid_estado(record: dict) -> bool:
+    return record.get("estado_registro") in {"activo", "suspendido", "fallecido"}
+
+
+def valid_rango_edad(record: dict) -> bool:
+    return record.get("rango_edad") in {"18-25", "26-35", "36-45", "46-60", "61+"}
+
+
+def valid_fecha_inscripcion(record: dict) -> bool:
+    value = record.get("fecha_inscripcion")
+    if not isinstance(value, str):
+        return False
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%Y-%m-%d") == value
+    except ValueError:
+        return False

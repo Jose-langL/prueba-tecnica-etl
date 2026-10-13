@@ -6,6 +6,7 @@ tocar esta clase.
 """
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime
 
 from src.extractors.base import BaseExtractor
@@ -45,8 +46,9 @@ class Pipeline:
             result = self.validator.run(records)
             records = result.valid
             rejected = len(result.rejected)
-            # TODO (opcional): ¿qué haces con result.rejected? (al menos, log)
             logger.info("[%s] calidad: %s", self.name, result.summary)
+            for reason, count in Counter(reason for _, reason in result.rejected).items():
+                logger.warning("[%s] rechazados=%s motivo=%s", self.name, count, reason)
 
         loaded = self.loader.load(records)
         elapsed = (datetime.now() - started).total_seconds()
